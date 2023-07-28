@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "ocr-image-generation-preprocessing"
+version = "0.0.1"
+description = "image generation and preprocessing to be used for ocr training and deployment"
+authors = ["eprader <56026248+eprader@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{include = "ocr_image_generation_preprocessing"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+numpy = "^1.25.1"
+Pillow = "9.5.0"
+opencv-python = "^4.8.0.74"
+
+[tool.poetry.group.dev.dependencies]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
