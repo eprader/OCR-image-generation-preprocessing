@@ -1,11 +1,15 @@
 from PIL import Image, ImageDraw, ImageFont
 import cv2 as cv
 import numpy as np
+import string
+import time
 
 MIN_SOLIDITY = 0.6
 
 BG_COLOR = (0, 0, 0) # black
 FG_COLOR = (255, 255, 255) # white
+
+FONT_PATH = "./fonts/EnvoyScript.ttf"
 
 def get_font_text_size(font, text):
     image = Image.new("RGB", (1, 1))
@@ -33,10 +37,8 @@ def rotate_image(image, angle_degrees, fillcolor=BG_COLOR):
 def createimage(text, font_path, font_size=40, text_padding=10, angle_degrees = 0):
     font = ImageFont.truetype(font_path, font_size)
     image = draw_text_image(text, font, text_padding=text_padding)
-    image.save(f"{text}_render.png")
 
     rotated = rotate_image(image, angle_degrees)
-    rotated.save(f"{text}_render_rotate.png")
 
     return rotated
 
@@ -52,24 +54,6 @@ def convert_image_black_white(image):
         _, im_bw = cv.threshold(gray, 90, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
 
     return im_bw
-
-def find_orientation_with_template_matching(image, template):
-    result = cv.matchTemplate(image, template, cv.TM_CCOEFF_NORMED)
-
-    # Find the location of the best match
-    min_val, max_val, min_loc, max_loc = cv.minMaxLoc(result)
-
-    # Get the top-left and bottom-right corners of the matched region
-    h, w = template.shape[:2]
-    top_left = max_loc
-    bottom_right = (top_left[0] + w, top_left[1] + h)
-
-    center_x = (top_left[0] + bottom_right[0]) // 2
-    center_y = (top_left[1] + bottom_right[1]) // 2
-
-    angle = np.arctan2(center_y - image.shape[0] // 2, center_x - image.shape[1] // 2) * 180 / np.pi
-
-    return angle
 
 def find_bboxes(im_bw):
     kernal = cv.getStructuringElement(cv.MORPH_RECT, (15, 45))
@@ -102,51 +86,62 @@ def find_bboxes(im_bw):
             solidity = cv.contourArea(contour) / (width * height)
             if solidity > MIN_SOLIDITY:
                 # Draw the rotated bounding box on the image
-                cv.drawContours(im_bw, [box], 0, (36, 255, 12), 2)
+                cv.drawContours(im_bw, [box], 0, (36, 255, 12), 2) 
 
     return im_bw
 
 def find_orientation_with_sift(image, template):
-    # Initialize SIFT detector
     sift = cv.SIFT_create()
 
-    # Detect keypoints and compute descriptors for both the image and the template
     keypoints1, descriptors1 = sift.detectAndCompute(image, None)
     keypoints2, descriptors2 = sift.detectAndCompute(template, None)
 
-    # Initialize a Brute-Force Matcher
     bf = cv.BFMatcher()
 
-    # Find matches between the descriptors of the image and the template
     matches = bf.knnMatch(descriptors1, descriptors2, k=2)
 
-    # Apply ratio test to filter good matches
     good_matches = []
     for m, n in matches:
         if m.distance < 0.75 * n.distance:
             good_matches.append(m)
 
+    # NOTE: Estimate homography matrix
     if len(good_matches) >= 4:
-        # Estimate the homography matrix using RANSAC
         src_pts = np.float32([keypoints1[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
         dst_pts = np.float32([keypoints2[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
         M, mask = cv.findHomography(src_pts, dst_pts, cv.RANSAC, 5.0)
 
         if M is not None:
-            # Calculate the angle from the homography matrix
             angle = np.arctan2(M[1, 0], M[0, 0]) * 180 / np.pi
             return angle
 
     return None
 
+def average_rotation_angle_over_alphabet(image, alphabet):
+    alphabet_angles = {}
+
+    for char in alphabet:
+        template = np.array(createimage(char, FONT_PATH))
+
+        angle = find_orientation_with_sift(image, template)
+        if angle is not None:
+            alphabet_angles[char] = angle
+
+    if not alphabet_angles:
+        return None
+
+    mean =  np.mean(list(alphabet_angles.values()))
+
+    return mean
+
 def preprocess(name):
     image = cv.imread(f"./{name}.png")
     im_bw = convert_image_black_white(image)
-    template = np.array(createimage("t", "./fonts/EnvoyScript.ttf"))
-    cv.imwrite(f"template.png",template)
+    template = np.array(createimage("t", FONT_PATH))
+    cv.imwrite("template.png",template)
     template = np.array(convert_image_black_white(template))
-    cv.imwrite(f"template_bw.png",template)
-    angle = find_orientation_with_sift(im_bw, template)
+    cv.imwrite("template_bw.png",template)
+    angle = average_rotation_angle_over_alphabet(im_bw, string.ascii_lowercase)
     result = str(angle) if angle != None else "FAILED"
     print(result)
     bbox_image = find_bboxes(im_bw)
@@ -155,7 +150,7 @@ def preprocess(name):
 
 if __name__ == "__main__":
     text = "tester\n\nsecond line\nthird line\n\n top"
-    font_path = "./fonts/EnvoyScript.ttf"  # specify the path to your font file
-    createimage(text, font_path, angle_degrees=180)
+    image = createimage(text, FONT_PATH, angle_degrees=180)
+    cv.imwrite(f"{text}_render.png")
     preprocess(text + "_render_rotate")
 
