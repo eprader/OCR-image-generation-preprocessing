@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 import cv2 as cv
 import numpy as np
 import string
-import time
+import image_create
 
 MIN_SOLIDITY = 0.6
 
@@ -11,36 +11,36 @@ FG_COLOR = (255, 255, 255) # white
 
 FONT_PATH = "./fonts/EnvoyScript.ttf"
 
-def get_font_text_size(font, text):
-    image = Image.new("RGB", (1, 1))
-    draw = ImageDraw.Draw(image)
-
-    width, height = draw.textsize(text, font=font)
-
-    return width, height
-
-def draw_text_image(text, font, text_padding, background_color=BG_COLOR, font_color=FG_COLOR):
-    width, height = get_font_text_size(font, text)
-    image = Image.new("RGB", (width + 2 * text_padding, height + 2 * text_padding), background_color)
-    draw = ImageDraw.Draw(image) 
-    text_x_y = (text_padding, text_padding)
-
-    draw.text(text_x_y, text, font=font, fill=font_color)
-
-    return image
-
-def rotate_image(image, angle_degrees, fillcolor=BG_COLOR):
-    rotated_text = image.rotate(angle_degrees, resample=Image.BICUBIC, expand=True, fillcolor=fillcolor)
-
-    return rotated_text
-
-def createimage(text, font_path, font_size=40, text_padding=10, angle_degrees = 0):
-    font = ImageFont.truetype(font_path, font_size)
-    image = draw_text_image(text, font, text_padding=text_padding)
-
-    rotated = rotate_image(image, angle_degrees)
-
-    return rotated
+# def get_font_text_size(font, text):
+#     image = Image.new("RGB", (1, 1))
+#     draw = ImageDraw.Draw(image)
+#
+#     width, height = draw.textsize(text, font=font)
+#
+#     return width, height
+#
+# def draw_text_image(text, font, text_padding, background_color=BG_COLOR, font_color=FG_COLOR):
+#     width, height = get_font_text_size(font, text)
+#     image = Image.new("RGB", (width + 2 * text_padding, height + 2 * text_padding), background_color)
+#     draw = ImageDraw.Draw(image) 
+#     text_x_y = (text_padding, text_padding)
+#
+#     draw.text(text_x_y, text, font=font, fill=font_color)
+#
+#     return image
+#
+# def rotate_image(image, angle_degrees, fillcolor=BG_COLOR):
+#     rotated_text = image.rotate(angle_degrees, resample=Image.BICUBIC, expand=True, fillcolor=fillcolor)
+#
+#     return rotated_text
+#
+# def createimage(text, font_path, font_size=40, text_padding=10, angle_degrees = 0):
+#     font = ImageFont.truetype(font_path, font_size)
+#     image = draw_text_image(text, font, text_padding=text_padding)
+#
+#     rotated = rotate_image(image, angle_degrees)
+#
+#     return rotated
 
 def convert_image_black_white(image):
     gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
@@ -121,7 +121,7 @@ def average_rotation_angle_over_alphabet(image, alphabet):
     alphabet_angles = {}
 
     for char in alphabet:
-        template = np.array(createimage(char, FONT_PATH))
+        template = np.array(image_create.createimage(char, FONT_PATH))
 
         angle = find_orientation_with_sift(image, template)
         if angle is not None:
@@ -137,7 +137,7 @@ def average_rotation_angle_over_alphabet(image, alphabet):
 def preprocess(name):
     image = cv.imread(f"./{name}.png")
     im_bw = convert_image_black_white(image)
-    template = np.array(createimage("t", FONT_PATH))
+    template = np.array(image_create.createimage("t", FONT_PATH))
     cv.imwrite("template.png",template)
     template = np.array(convert_image_black_white(template))
     cv.imwrite("template_bw.png",template)
@@ -150,7 +150,7 @@ def preprocess(name):
 
 if __name__ == "__main__":
     text = "tester\n\nsecond line\nthird line\n\n top"
-    image = createimage(text, FONT_PATH, angle_degrees=180)
-    cv.imwrite(f"{text}_render.png")
-    preprocess(text + "_render_rotate")
+    image = np.array(image_create.createimage(text, FONT_PATH, angle_degrees=180))
+    cv.imwrite(f"{text}_render.png", image)
+    preprocess(text + "_render")
 
