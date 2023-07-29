@@ -5,7 +5,7 @@
       "label": "run script.py",
       "type": "shell",
       "command": "python",
-      "args": ["${workspaceFolder}/script.py"],
+      "args": ["${workspaceFolder}/main.py"],
       "presentation": {
         "reveal": "always",
         "panel": "shared",
