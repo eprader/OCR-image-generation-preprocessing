@@ -46,11 +46,28 @@ class ImageGenerator:
         return image
 
     def _rotate_image(self, image, angle_degrees):
+        """
+        Rotates a given image by the given degrees.
+
+        Parameters:
+            image (Image): The image to be rotated.
+            angle_degrees (int): the degrees the image will be rotated by. If positive the image will be rotated clockwise else counter clockwise
+        """
         rotated_text = image.rotate(angle_degrees, resample=Image.BICUBIC, expand=True, fillcolor=self.bg_color)
 
         return rotated_text
 
     def createimage(self, text, rotation_angle_degrees = 0):
+        """
+        Generates the image containing the given text and rotated according to 'rotation_angle_degrees'.
+
+        Parameters:
+            text (str): The text to be contained in the image.
+            rotation_angle_degrees (int): If positive the image will be rotated clockwise else counter clockwise.
+
+        Returns:
+            array () The final image as an np.array.
+        """
         image = self._draw_text_image(text)
 
         rotated = self._rotate_image(image, rotation_angle_degrees)
