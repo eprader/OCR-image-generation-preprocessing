@@ -1,12 +1,9 @@
 import numpy as np
 import cv2 as cv
 import string
-import image_create
+import image_generator
 
 MIN_SOLIDITY = 0.6
-
-BG_COLOR = (0, 0, 0) # black
-FG_COLOR = (255, 255, 255) # white
 
 FONT_PATH = "./fonts/EnvoyScript.ttf"
 
@@ -87,9 +84,10 @@ def find_orientation_with_sift(image, template):
 
 def average_rotation_angle_over_alphabet(image, alphabet):
     alphabet_angles = {}
+    generator = image_generator.ImageGenerator(FONT_PATH, 40)
 
     for char in alphabet:
-        template = np.array(image_create.createimage(char, FONT_PATH))
+        template = np.array(generator.createimage(char))
 
         angle = find_orientation_with_sift(image, template)
         if angle is not None:
@@ -105,10 +103,6 @@ def average_rotation_angle_over_alphabet(image, alphabet):
 def preprocess(name):
     image = cv.imread(f"./{name}.png")
     im_bw = convert_image_black_white(image)
-    template = np.array(image_create.createimage("t", FONT_PATH))
-    cv.imwrite("template.png",template)
-    template = np.array(convert_image_black_white(template))
-    cv.imwrite("template_bw.png",template)
     angle = average_rotation_angle_over_alphabet(im_bw, string.ascii_lowercase)
     result = str(angle) if angle != None else "FAILED"
     print(result)
