@@ -1,6 +1,6 @@
 import numpy as np
 
-class Generator:
+class TextGenerator:
     def __init__(self, character_list, random_seed):
         self.character_list = character_list
         self.random_seed = random_seed
