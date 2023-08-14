@@ -42,6 +42,6 @@ class MetaDataGenerator:
         """
         Generates an ImageData tuple.
         """
-        rotation_angle_degrees = np.random.choice(range(-181,179))
+        rotation_angle_degrees = np.random.choice(range(-180,180))
         text = self.text_gen.generate_random_sequence()
         return ImageData(text, rotation_angle_degrees)
