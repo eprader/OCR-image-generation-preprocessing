@@ -1,4 +1,5 @@
 from PIL import Image, ImageDraw, ImageFont
+import numpy as np
 
 class ImageGenerator:
     def __init__(self, font_path, font_size, padding=10, bg_color=(0, 0, 0), fg_color=(255, 255, 255)):
@@ -72,4 +73,4 @@ class ImageGenerator:
 
         rotated = self._rotate_image(image, rotation_angle_degrees)
 
-        return rotated
+        return np.array(rotated)
